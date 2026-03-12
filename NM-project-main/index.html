@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kids Quiz App</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  background: linear-gradient(135deg,#74ebd5 0%,#ACB6E5 100%);
+  overflow:hidden;
+  position:relative;
+}
+
+/* Cards */
+.card {
+  background:#fff;
+  padding:20px;
+  border-radius:20px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.2);
+  width:90%;
+  max-width:420px;
+  text-align:center;
+  position:relative;
+  z-index:1;
+  animation: fadeIn 0.5s;
+}
+.card h1{margin-top:0;color:#e67e22;font-size:28px}
+h2,h3{color:#2c3e50}
+input,button{width:90%;padding:12px;margin:10px 0;border:none;border-radius:10px;font-size:16px}
+button{background:#3498db;color:#fff;cursor:pointer;transition:.3s}
+button:hover{background:#2980b9;transform:scale(1.05)}
+.avatar-box{display:flex;justify-content:center;gap:15px;margin:10px 0}
+.avatar{width:70px;height:70px;border-radius:50%;border:4px solid transparent;cursor:pointer;transition:.3s}
+.avatar:hover{transform:scale(1.1)}
+.quiz-btn{display:block;width:100%;margin:6px 0}
+.hidden{display:none}
+#progress{height:12px;background:#ddd;border-radius:6px;overflow:hidden;margin:10px 0}
+#progress-bar{height:12px;width:0%;background:#27ae60;transition:width .3s}
+.leaderboard-list{text-align:left;max-height:200px;overflow-y:auto;padding:0}
+.leaderboard-list li{list-style:none;padding:6px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px}
+.leaderboard-list img{border-radius:50%}
+#timer{font-size:18px;color:#e67e22;margin-top:8px;}
+
+/* Heading emojis */
+.heading-emojis {
+  text-align:center;
+  font-size:32px;
+  margin-bottom:5px;
+  animation: floatUpHeading 3s ease-in-out infinite alternate;
+}
+
+/* Floating lights on login */
+#login-lights {position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:15px;pointer-events:none;}
+.light {width:20px;height:20px;border-radius:50%;opacity:0.7;box-shadow:0 0 10px #000;}
+.red-light{background:red;} .green-light{background:green;}
+@keyframes bounceLight {0%,100%{transform:translateY(0);}50%{transform:translateY(-20px);} }
+.light.float {animation:bounceLight 3s ease-in-out infinite;}
+
+/* Flash overlay for right/wrong */
+.flash-overlay {position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;opacity:0;transition:opacity 0.2s;}
+.flash-correct {background: rgba(0,255,0,0.3);}
+.flash-wrong {background: rgba(255,0,0,0.3);}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes floatUpHeading {0%{transform:translateY(0);}100%{transform:translateY(-10px);}}
+@keyframes floatUp {0% {transform: translateY(0) scale(0.5); opacity:0.8;} 100% {transform: translateY(-300px) scale(1.2); opacity:0;}}
+@keyframes rotateOrbit {0%{transform:rotate(0deg) translateX(0px) rotate(0deg);}100%{transform:rotate(360deg) translateX(0px) rotate(-360deg);}}
+@keyframes floatRandom {0%{transform: translateY(100vh) translateX(0);}100%{transform: translateY(-50px) translateX(50px);}}
+.sparkle {position: absolute;width: 10px; height: 10px;background: radial-gradient(circle,#ffd700,#ffdd44);border-radius: 50%;opacity: 0.8;animation: floatUp linear infinite;}
+.orbit {position: absolute;font-size: 30px;animation: rotateOrbit linear infinite;}
+.background-emoji {position: absolute;font-size: 25px;animation: floatRandom linear infinite;opacity:0.6;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN CARD -->
+<div class="card" id="loginCard">
+  <div class="heading-emojis"></div>
+  <h1>Quiz App</h1>
+  <h2>Welcome to Kids Quiz!</h2>
+  <p>Login or Register to start</p>
+  <div id="login-lights"></div>
+  <input type="text" id="username" placeholder="Enter Username">
+  <h3>Choose Avatar</h3>
+  <div class="avatar-box">
+    <img src="Assets/boy.jpg" class="avatar" onclick="selectAvatar(this)">
+    <img src="Assets/girl.jpg" class="avatar" onclick="selectAvatar(this)">
+    <img src="Assets/dog.jpg" class="avatar" onclick="selectAvatar(this)">
+  </div>
+  <button onclick="registerUser()">Continue</button>
+</div>
+
+<!-- CATEGORY CARD -->
+<div class="card hidden" id="categoryCard">
+  <div class="heading-emojis"></div>
+  <h1>Quiz App</h1>
+  <h2>Choose Category</h2>
+  <button class="quiz-btn" onclick="chooseCategory('Animals')">🐼 Animals</button>
+  <button class="quiz-btn" onclick="chooseCategory('Space')">🚀 Space</button>
+  <button class="quiz-btn" onclick="chooseCategory('Food')">🍔 Food</button>
+  <button class="quiz-btn" onclick="chooseCategory('Science')">🔬 Science</button>
+</div>
+
+<!-- DIFFICULTY CARD -->
+<div class="card hidden" id="difficultyCard">
+  <div class="heading-emojis"></div>
+  <h1>Quiz App</h1>
+  <h2>Select Difficulty</h2>
+  <button class="quiz-btn" onclick="chooseDifficulty('Easy')">🙂 Easy (5 Qs)</button>
+  <button class="quiz-btn" onclick="chooseDifficulty('Medium')">😎 Medium (10 Qs)</button>
+  <button class="quiz-btn" onclick="chooseDifficulty('Hard')">🤯 Hard (15 Qs)</button>
+</div>
+
+<!-- QUIZ CARD -->
+<div class="card hidden" id="quizCard">
+  <div class="heading-emojis"></div>
+  <h1>Quiz App</h1>
+  <h2 id="question">Question</h2>
+  <div id="answer-buttons"></div>
+  <div id="progress"><div id="progress-bar"></div></div>
+  <p id="timer">⏱ Time Left: 15s</p>
+  <button id="next-btn" class="hidden" onclick="nextQuestion()">Next</button>
+</div>
+
+<!-- LEADERBOARD CARD -->
+<div class="card hidden" id="leaderboardCard">
+  <div class="heading-emojis"></div>
+  <h1>Quiz App</h1>
+  <h2>🏆 Leaderboard</h2>
+  <ul class="leaderboard-list" id="leaderboardList"></ul>
+  <button onclick="restartQuiz()">Play Again</button>
+</div>
+
+<div id="floatingAvatars"></div>
+<div id="flashOverlay" class="flash-overlay"></div>
+
+<!-- SOUNDS -->
+<audio id="correctSound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
+<audio id="wrongSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
+<audio id="tickleSound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+
+<script>
+// --- GLOBAL VARIABLES ---
+let selectedAvatar="", quizUser={}, category="", difficulty="", currentQuestions=[], currentIndex=0, score=0;
+let timerId, timeLeft=15;
+
+const headingEmojisArr = ['🧒','🎉','📚','🖍️','🐶','🐱','🍎','🚀','🔬','🌟'];
+
+// --- EXPANDED QUIZZES ---
+let quizzes = {
+  Animals: [
+    {q:"Which animal is King of Jungle?", a:["Elephant","Lion","Tiger","Bear"], c:1},
+    {q:"Fastest animal?", a:["Cheetah","Lion","Horse","Tiger"], c:0},
+    {q:"Largest animal?", a:["Elephant","Whale","Giraffe","Hippo"], c:1},
+    {q:"Which is domestic?", a:["Lion","Dog","Cat","Tiger"], c:2},
+    {q:"Which animal says 'Moo'?", a:["Dog","Cat","Cow","Sheep"], c:2},
+    {q:"Striped animal?", a:["Tiger","Zebra","Horse","Dog"], c:1},
+    {q:"Has long neck?", a:["Elephant","Giraffe","Horse","Dog"], c:1},
+    {q:"Can fly?", a:["Eagle","Tiger","Lion","Dog"], c:0},
+    {q:"Lives in packs?", a:["Wolf","Tiger","Lion","Cat"], c:0},
+    {q:"Has trunk?", a:["Elephant","Giraffe","Tiger","Lion"], c:0},
+    {q:"Large marine mammal?", a:["Whale","Shark","Dolphin","Seal"], c:0},
+    {q:"Small domestic cat?", a:["Kitten","Lion","Tiger","Bear"], c:0},
+    {q:"King of desert?", a:["Camel","Lion","Elephant","Tiger"], c:0},
+    {q:"Jumps long?", a:["Kangaroo","Tiger","Lion","Dog"], c:0},
+    {q:"Has quills?", a:["Hedgehog","Lion","Tiger","Dog"], c:0}
+  ],
+  Space: [
+    {q:"Red Planet?", a:["Earth","Mars","Venus","Jupiter"], c:1},
+    {q:"Largest planet?", a:["Jupiter","Saturn","Earth","Mars"], c:0},
+    {q:"Closest star?", a:["Sun","Sirius","Alpha Centauri","Betelgeuse"], c:0},
+    {q:"Planet with rings?", a:["Mars","Jupiter","Saturn","Venus"], c:2},
+    {q:"Moon of Earth?", a:["Phobos","Europa","Moon","Titan"], c:2},
+    {q:"Blue planet?", a:["Earth","Mars","Jupiter","Venus"], c:0},
+    {q:"Farthest planet?", a:["Neptune","Earth","Mars","Jupiter"], c:0},
+    {q:"Star at center?", a:["Sun","Moon","Earth","Mars"], c:0},
+    {q:"Comet made of?", a:["Ice and dust","Gas","Rock","Metal"], c:0},
+    {q:"Galaxy we live in?", a:["Milky Way","Andromeda","Whirlpool","Pinwheel"], c:0},
+    {q:"Light year measures?", a:["Distance","Time","Speed","Mass"], c:0},
+    {q:"Famous space telescope?", a:["Hubble","Kepler","James Webb","Spitzer"], c:0},
+    {q:"Planet with storms?", a:["Jupiter","Earth","Mars","Venus"], c:0},
+    {q:"First manned moon landing?", a:["1969","1965","1975","1980"], c:0},
+    {q:"Planet with largest moon?", a:["Jupiter","Mars","Earth","Saturn"], c:0}
+  ],
+  Food: [
+    {q:"Fruit keeps doctor away?", a:["Apple","Banana","Mango","Orange"], c:0},
+    {q:"Healthy vegetable?", a:["Carrot","Candy","Cake","Burger"], c:0},
+    {q:"Sweet fruit?", a:["Apple","Mango","Tomato","Carrot"], c:1},
+    {q:"Breakfast drink?", a:["Water","Milk","Juice","Soda"], c:1},
+    {q:"Fast food?", a:["Pizza","Carrot","Apple","Broccoli"], c:0},
+    {q:"Dairy product?", a:["Milk","Apple","Carrot","Candy"], c:0},
+    {q:"Green vegetable?", a:["Spinach","Candy","Cake","Burger"], c:0},
+    {q:"Soft drink?", a:["Cola","Apple","Milk","Carrot"], c:0},
+    {q:"Nutty snack?", a:["Almond","Burger","Cake","Candy"], c:0},
+    {q:"Leafy green?", a:["Lettuce","Candy","Burger","Cake"], c:0},
+    {q:"Popular pasta?", a:["Spaghetti","Cake","Candy","Burger"], c:0},
+    {q:"Vitamin C fruit?", a:["Orange","Cake","Candy","Burger"], c:0},
+    {q:"Baked dessert?", a:["Cake","Apple","Spinach","Carrot"], c:0},
+    {q:"Fruit for pie?", a:["Apple","Candy","Carrot","Spinach"], c:0},
+    {q:"Breakfast cereal?", a:["Oats","Cake","Candy","Burger"], c:0}
+  ],
+  Science: [
+    {q:"H2O?", a:["Hydrogen","Water","Oxygen","Helium"], c:1},
+    {q:"Force pulls down?", a:["Gravity","Magnet","Friction","Push"], c:0},
+    {q:"Earth spins?", a:["True","False"], c:0},
+    {q:"Light travels?", a:["Fast","Slow"], c:0},
+    {q:"Energy source?", a:["Sun","Coal","Water","Air"], c:0},
+    {q:"Produces oxygen?", a:["Plants","Cars","Fire","Rocks"], c:0},
+    {q:"Electricity source?", a:["Battery","Car","Plant","Stone"], c:0},
+    {q:"Magnets attract?", a:["Metal","Wood","Plastic","Paper"], c:0},
+    {q:"States of matter?", a:["Solid, Liquid, Gas","Air, Fire, Water","Sun, Moon, Stars","Metal, Wood, Plastic"], c:0},
+    {q:"Unit of force?", a:["Newton","Joule","Watt","Pascal"], c:0},
+    {q:"Hot star color?", a:["Blue","Red","Green","Yellow"], c:0},
+    {q:"Gas we breathe?", a:["Oxygen","Hydrogen","Carbon dioxide","Nitrogen"], c:0},
+    {q:"Human body has?", a:["Organs","Rocks","Stars","Trees"], c:0},
+    {q:"Light speed?", a:["299,792 km/s","150,000 km/s","1,000 km/s","30,000 km/s"], c:0},
+    {q:"First man on Earth?", a:["Homo sapiens","Neanderthal","Chimpanzee","Alien"], c:0}
+  ]
+};
+
+// --- FUNCTIONS ---
+function showCard(id){
+  ["loginCard","categoryCard","difficultyCard","quizCard","leaderboardCard"].forEach(c=>document.getElementById(c).classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  showHeadingEmojis(id);
+}
+function showHeadingEmojis(cardId){
+  const card=document.getElementById(cardId);
+  const div=card.querySelector('.heading-emojis');
+  div.innerHTML='';
+  for(let i=0;i<5;i++){ div.innerText += headingEmojisArr[Math.floor(Math.random()*headingEmojisArr.length)];}
+}
+function selectAvatar(img){document.querySelectorAll(".avatar").forEach(a=>a.style.borderColor="transparent"); img.style.borderColor="#2980b9"; selectedAvatar=img.src;}
+function registerUser(){let u=document.getElementById("username").value.trim(); if(!u||!selectedAvatar){alert("Enter username & select avatar"); return;} quizUser={username:u,avatar:selectedAvatar}; localStorage.setItem("quizUser",JSON.stringify(quizUser)); playTickle(); showCard("categoryCard");}
+function chooseCategory(cat){category=cat; playTickle(); showCard("difficultyCard");}
+function chooseDifficulty(diff){difficulty=diff; playTickle(); startQuiz();}
+function startQuiz(){
+  score = 0;
+  currentIndex = 0;
+  let allQuestions = [...quizzes[category]];
+  if(difficulty==="Easy") currentQuestions = allQuestions.slice(0,5);
+  else if(difficulty==="Medium") currentQuestions = allQuestions.slice(0,10);
+  else currentQuestions = allQuestions.slice(0,15);
+  showCard("quizCard");
+  nextQuestion();
+}
+function nextQuestion(){
+  resetState();
+  if(currentIndex>=currentQuestions.length){showLeaderboard(); return;}
+  const q=currentQuestions[currentIndex];
+  const btnContainer=document.getElementById("answer-buttons");
+  q.a.forEach((ans,i)=>{
+    const btn=document.createElement("button");
+    btn.innerText=ans; btn.className="quiz-btn"; btn.onclick=()=>selectAnswer(i);
+    btnContainer.appendChild(btn);
+  });
+  document.getElementById("question").innerText=q.q;
+  currentIndex++;
+  startTimer();
+}
+function resetState(){clearInterval(timerId); timeLeft=15; document.getElementById("timer").innerText=`⏱ Time Left: ${timeLeft}s`; document.getElementById("answer-buttons").innerHTML=""; document.getElementById("next-btn").classList.add("hidden");}
+function selectAnswer(i){const q=currentQuestions[currentIndex-1]; if(i===q.c){score++; document.getElementById('correctSound').play(); createConfetti(); flashRight();} else{document.getElementById('wrongSound').play(); flashWrong();} clearInterval(timerId); document.getElementById("next-btn").classList.remove("hidden");}
+function startTimer(){clearInterval(timerId); timeLeft=15; document.getElementById("timer").innerText=`⏱ Time Left: ${timeLeft}s`; timerId=setInterval(()=>{timeLeft--; document.getElementById("timer").innerText=`⏱ Time Left: ${timeLeft}s`; if(timeLeft<=0){clearInterval(timerId); nextQuestion();}},1000);}
+function showLeaderboard(){showCard("leaderboardCard"); const list=document.getElementById("leaderboardList"); list.innerHTML=`<li><img src="${quizUser.avatar}" width="30"> ${quizUser.username}: ${score} pts</li>`;}
+function restartQuiz(){showCard("loginCard");}
+function playTickle(){document.getElementById('tickleSound').play();}
+function createConfetti(){const colors=['#e74c3c','#f1c40f','#2ecc71','#3498db','#9b59b6']; for(let i=0;i<30;i++){const conf=document.createElement('div'); conf.style.position='absolute'; conf.style.width=conf.style.height=Math.random()*8+4+'px'; conf.style.background=colors[Math.floor(Math.random()*colors.length)]; conf.style.left=(window.innerWidth/2+(Math.random()*100-50))+'px'; conf.style.top=(window.innerHeight/2+(Math.random()*50-25))+'px'; conf.style.opacity=0.9; conf.style.borderRadius='50%'; conf.style.pointerEvents='none'; conf.style.zIndex=9999; document.body.appendChild(conf); const dx=Math.random()*200-100; const dy=Math.random()*200+50; conf.animate([{transform:'translate(0,0) rotate(0deg)', opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(${Math.random()*720}deg)`,opacity:0}],{duration:1000+Math.random()*500,easing:'ease-out'}); setTimeout(()=>conf.remove(),1500); }}
+function flashRight(){flashOverlay('flash-correct');}
+function flashWrong(){flashOverlay('flash-wrong');}
+function flashOverlay(cls){const overlay=document.getElementById('flashOverlay'); overlay.className='flash-overlay '+cls; overlay.style.opacity='1'; setTimeout(()=>{overlay.style.opacity='0';},300);}
+function createLoginLights(){const container=document.getElementById('login-lights'); for(let i=0;i<5;i++){const red=document.createElement('div'); red.className='light red-light float'; const green=document.createElement('div'); green.className='light green-light float'; container.appendChild(red); container.appendChild(green);}} 
+createLoginLights();
+const bgEmojis = ['🐶','🐱','🦄','🚀','🌟','🍎','🍕','🪐','🧪','🎈','🎉'];
+for(let i=0;i<20;i++){const span=document.createElement('span'); span.className='background-emoji'; span.innerText=bgEmojis[Math.floor(Math.random()*bgEmojis.length)]; span.style.left=Math.random()*100+'vw'; span.style.top=Math.random()*100+'vh'; span.style.animationDuration=(5+Math.random()*15)+'s'; document.body.appendChild(span);}
+function createSparkles(){document.querySelectorAll('.card').forEach(c=>{for(let i=0;i<10;i++){const s=document.createElement('span'); s.className='sparkle'; s.style.left=Math.random()*90+'%'; s.style.top=Math.random()*90+'%'; s.style.animationDuration=(2+Math.random()*3)+'s'; c.appendChild(s); setTimeout(()=>s.remove(),5000);}});}
+setInterval(createSparkles,800);
+</script>
+</body>
+</html>
+
